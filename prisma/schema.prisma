@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Montos siempre en centavos (Int).
+
+model Category {
+  id            Int           @id @default(autoincrement())
+  name          String
+  slug          String        @unique
+  order         Int           @default(0)
+  subcategories Subcategory[]
+  items         PantryItem[]
+}
+
+model Subcategory {
+  id         Int          @id @default(autoincrement())
+  name       String
+  categoryId Int
+  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  items      PantryItem[]
+
+  @@unique([categoryId, name])
+}
+
+model PantryItem {
+  id            Int             @id @default(autoincrement())
+  name          String
+  brand         String          @default("")
+  // nombre|marca normalizado, para detectar artículos existentes
+  key           String          @unique
+  description   String?
+  quantity      Float           @default(0)
+  unit          String          @default("unidad")
+  minStock      Float           @default(1)
+  categoryId    Int
+  category      Category        @relation(fields: [categoryId], references: [id])
+  subcategoryId Int?
+  subcategory   Subcategory?    @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  movements     StockMovement[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+model StockMovement {
+  id       Int          @id @default(autoincrement())
+  itemId   Int
+  item     PantryItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type     MovementType
+  quantity Float
+  cost     Int?
+  date     DateTime     @default(now())
+  note     String?
+
+  @@index([date])
+  @@index([itemId])
+}
+
+enum RecurringMode {
+  MANUAL
+  AUTO_DEBIT
+}
+
+model RecurringTax {
+  id               Int           @id @default(autoincrement())
+  name             String
+  mode             RecurringMode
+  defaultAmount    Int?
+  paymentMethod    String?
+  // día del mes de vencimiento (MANUAL) o de débito (AUTO_DEBIT)
+  dueDay           Int           @default(10)
+  // primer período a generar, "YYYY-MM"
+  startPeriod      String
+  // último período ya generado, "YYYY-MM"
+  generatedThrough String?
+  active           Boolean       @default(true)
+  taxes            Tax[]
+  createdAt        DateTime      @default(now())
+}
+
+enum TaxStatus {
+  PENDING
+  PAID
+}
+
+model Tax {
+  id             Int           @id @default(autoincrement())
+  name           String
+  // "YYYY-MM"
+  period         String
+  status         TaxStatus     @default(PENDING)
+  dueDate        DateTime?
+  paidAt         DateTime?
+  paymentMethod  String?
+  amount         Int?
+  notes          String?
+  recurringTaxId Int?
+  recurringTax   RecurringTax? @relation(fields: [recurringTaxId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+
+  @@unique([recurringTaxId, period])
+  @@index([paidAt])
+  @@index([period])
+}
+
+enum RepairStatus {
+  PENDING
+  DONE
+}
+
+model Repair {
+  id            Int          @id @default(autoincrement())
+  title         String
+  description   String?
+  status        RepairStatus @default(PENDING)
+  date          DateTime?
+  estimatedCost Int?
+  cost          Int?
+  createdAt     DateTime     @default(now())
+
+  @@index([date])
+}
+
+model ShoppingItem {
+  id        Int      @id @default(autoincrement())
+  name      String
+  notes     String?
+  createdAt DateTime @default(now())
+}

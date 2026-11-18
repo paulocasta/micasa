@@ -1,0 +1,12 @@
+services:
+  micasa:
+    build: .
+    image: micasa:latest
+    container_name: micasa
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    volumes:
+      - ./data:/data
