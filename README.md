@@ -1,6 +1,6 @@
 # Mi Casa
 
-App web para registrar los gastos de la casa: **Despensa**, **Impuestos** y **Reparaciones**, con un **Inicio** que resume el gasto por mes o año.
+App web para registrar los gastos de la casa: **Despensa**, **Impuestos**, **Reparaciones** y **Gastos varios**, con un **Inicio** que resume el gasto por mes o año.
 
 Stack: Next.js 16 (App Router, Server Actions) · Prisma 7 + SQLite · Tailwind 4 + shadcn/ui · Recharts.
 
@@ -13,8 +13,9 @@ Stack: Next.js 16 (App Router, Server Actions) · Prisma 7 + SQLite · Tailwind 
   - *Débito automático* (ej. Internet): cada mes se crea la entrada como pagada con el monto configurado.
   - Un job diario (00:05, hora Argentina) y el arranque del servidor generan lo que falte. Si borrás una entrada generada, no se vuelve a crear.
 - **Reparaciones**: por hacer (costo estimado) o hechas (fecha y costo real). Solo las hechas suman al gasto.
+- **Gastos varios**: compras y pagos sueltos que no son stock de despensa — remedios, baldes, escobas, el jardinero. Cada gasto lleva categoría (Farmacia, Limpieza, Ferretería, Hogar, Super, Mercado Libre, Servicios, Otros), fecha y monto; medio de pago, comercio y notas son opcionales. Filtro por categoría y año. Las categorías se editan en `EXPENSE_CATEGORIES` (`src/lib/constants.ts`).
 
-Reglas de gasto: Despensa = compras con costo por fecha de compra; Impuestos = pagados por fecha de pago; Reparaciones = hechas por fecha.
+Reglas de gasto: Despensa = compras con costo por fecha de compra; Impuestos = pagados por fecha de pago; Reparaciones = hechas por fecha; Gastos varios = todos, por fecha.
 
 ## Desarrollo
 
