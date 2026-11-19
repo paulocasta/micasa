@@ -1,6 +1,6 @@
 # Mi Casa
 
-App web para registrar los gastos de la casa: **Despensa**, **Impuestos**, **Reparaciones** y **Gastos varios**, con un **Inicio** que resume el gasto por mes o año.
+App web para registrar los gastos de la casa: **Despensa**, **Impuestos**, **Reparaciones** y **Gastos varios**, con un **Inicio** que resume el gasto por mes o año y una lista de **Compras** pendientes.
 
 Stack: Next.js 16 (App Router, Server Actions) · Prisma 7 + SQLite · Tailwind 4 + shadcn/ui · Recharts.
 
@@ -8,6 +8,7 @@ Stack: Next.js 16 (App Router, Server Actions) · Prisma 7 + SQLite · Tailwind 
 
 - **Inicio**: gasto por sección y total del período (filtro mes/año), comparación con el período anterior, gráfico mensual del año (con vista de tabla), artículos con stock bajo, próximos impuestos, últimos pagados y últimas reparaciones.
 - **Despensa**: artículos por categoría/subcategoría, buscador, botones +/−. "Registrar compra" suma al stock si el artículo (nombre + marca) ya existe — ej. 1 Yerba Playadito + 4 = 5. El costo de la compra cuenta como gasto del mes. Cada artículo tiene stock mínimo y un historial de movimientos.
+- **Compras**: lista de cosas que hay que comprar para la casa, con notas opcionales. "Comprado" la quita de la lista. Es solo un recordatorio: no registra costo ni suma al gasto.
 - **Impuestos**: pendientes / vencidos / pagados con fecha, medio y monto. **Recurrentes**:
   - *Pago manual* (ej. Luz EPE): genera las entradas pendientes hasta diciembre; el 1° de enero genera el año nuevo.
   - *Débito automático* (ej. Internet): cada mes se crea la entrada como pagada con el monto configurado.
