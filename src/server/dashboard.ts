@@ -4,7 +4,7 @@ import type { Expense } from "@/lib/dashboard-calc";
 
 /** Todos los gastos con fecha dentro de [start, end). */
 export async function getExpenses(start: Date, end: Date): Promise<Expense[]> {
-  const [purchases, taxes, repairs] = await Promise.all([
+  const [purchases, taxes, repairs, misc] = await Promise.all([
     db.stockMovement.findMany({
       where: { type: "IN", cost: { not: null }, date: { gte: start, lt: end } },
       select: { date: true, cost: true },
@@ -17,11 +17,16 @@ export async function getExpenses(start: Date, end: Date): Promise<Expense[]> {
       where: { status: "DONE", cost: { not: null }, date: { gte: start, lt: end } },
       select: { date: true, cost: true },
     }),
+    db.expense.findMany({
+      where: { date: { gte: start, lt: end } },
+      select: { date: true, amount: true },
+    }),
   ]);
   return [
     ...purchases.map((p) => ({ section: "despensa" as const, date: p.date, amount: p.cost! })),
     ...taxes.map((t) => ({ section: "impuestos" as const, date: t.paidAt!, amount: t.amount! })),
     ...repairs.map((r) => ({ section: "reparaciones" as const, date: r.date!, amount: r.cost! })),
+    ...misc.map((m) => ({ section: "varios" as const, date: m.date, amount: m.amount })),
   ];
 }
 

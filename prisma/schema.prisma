@@ -137,3 +137,19 @@ model ShoppingItem {
   notes     String?
   createdAt DateTime @default(now())
 }
+
+// Gastos sueltos: farmacia, artículos de limpieza, ferretería, etc.
+model Expense {
+  id            Int      @id @default(autoincrement())
+  description   String
+  // valor de EXPENSE_CATEGORIES
+  category      String
+  date          DateTime
+  amount        Int
+  paymentMethod String?
+  store         String?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([date])
+}

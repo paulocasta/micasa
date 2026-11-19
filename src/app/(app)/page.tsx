@@ -46,7 +46,7 @@ export default async function InicioPage({ searchParams }: PageProps<"/">) {
   const months = byMonth(yearExpenses, year);
   const delta = prevTotal ? (totals.total - prevTotal) / prevTotal : null;
   const periodName = view === "anio" ? String(year) : `${MONTHS[month - 1]} ${year}`;
-  const visibleSeries = SERIES.filter((s) => s.key !== "reparaciones" || totals.reparaciones > 0);
+  const visibleSeries = SERIES.filter((s) => (s.key !== "reparaciones" && s.key !== "varios") || totals[s.key] > 0);
   const years = Array.from({ length: 5 }, (_, i) => today.year - i);
   if (!years.includes(year)) years.push(year);
 
@@ -87,7 +87,7 @@ export default async function InicioPage({ searchParams }: PageProps<"/">) {
         />
       </Suspense>
 
-      <section aria-label="Gastos del período" className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Gastos del período" className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card className="gap-2 bg-primary px-5 py-4 text-primary-foreground sm:col-span-2 lg:col-span-1">
           <p className="text-sm font-medium opacity-90">Total {view === "anio" ? "del año" : "del mes"}</p>
           <p className="text-3xl font-bold tracking-tight tabular">{formatMoney(totals.total)}</p>

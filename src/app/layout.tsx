@@ -10,7 +10,7 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: { default: "Mi Casa", template: "%s · Mi Casa" },
-  description: "Registro de gastos del hogar: despensa, impuestos y reparaciones.",
+  description: "Registro de gastos del hogar: despensa, impuestos, reparaciones y gastos varios.",
 };
 
 export const viewport: Viewport = {

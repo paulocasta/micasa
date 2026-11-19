@@ -1,6 +1,6 @@
 "use client";
 
-import { HomeIcon, LandmarkIcon, LogOutIcon, ShoppingBasketIcon, ShoppingCartIcon, WrenchIcon } from "lucide-react";
+import { HomeIcon, LandmarkIcon, LogOutIcon, ReceiptIcon, ShoppingBasketIcon, ShoppingCartIcon, WrenchIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/compras", label: "Compras", icon: ShoppingCartIcon },
   { href: "/impuestos", label: "Impuestos", icon: LandmarkIcon },
   { href: "/reparaciones", label: "Reparaciones", icon: WrenchIcon },
+  { href: "/gastos", label: "Varios", icon: ReceiptIcon },
 ];
 
 function useActive() {
@@ -92,7 +93,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Secciones"
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
       {LINKS.map(({ href, label, icon: Icon }) => (
         <Link
@@ -100,7 +101,7 @@ export function BottomNav() {
           href={href}
           aria-current={isActive(href) ? "page" : undefined}
           className={cn(
-            "flex h-16 flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground transition-colors duration-200",
+            "flex h-16 min-w-0 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors duration-200",
             isActive(href) && "text-primary",
           )}
         >
