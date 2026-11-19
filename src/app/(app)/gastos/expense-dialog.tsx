@@ -2,6 +2,7 @@
 
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useActionState, useId, useState } from "react";
+import { InstallmentFields } from "@/components/app/installment-fields";
 import { Field, FormError, MoneyInput, NativeSelect, SubmitButton, useActionFeedback } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from "@/lib/constants";
 import { todayInput } from "@/lib/dates";
-import { centsToInput } from "@/lib/money";
+import { centsToInput, parseMoney } from "@/lib/money";
 import { saveExpense } from "@/server/expense-actions";
 
 export type ExpenseView = {
@@ -29,6 +30,8 @@ export type ExpenseView = {
   paymentMethod: string;
   store: string;
   notes: string;
+  installmentNumber: number | null;
+  installmentCount: number | null;
 };
 
 export function ExpenseDialog({ expense }: { expense?: ExpenseView }) {
@@ -47,7 +50,13 @@ export function ExpenseDialog({ expense }: { expense?: ExpenseView }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{expense ? "Editar gasto" : "Nuevo gasto"}</DialogTitle>
+          <DialogTitle>
+            {!expense
+              ? "Nuevo gasto"
+              : expense.installmentCount
+                ? `Editar cuota ${expense.installmentNumber}/${expense.installmentCount}`
+                : "Editar gasto"}
+          </DialogTitle>
           <DialogDescription>Remedios, artículos de limpieza, ferretería y otras compras sueltas.</DialogDescription>
         </DialogHeader>
         {open && <ExpenseForm expense={expense} onDone={() => setOpen(false)} />}
@@ -63,6 +72,9 @@ function ExpenseForm({ expense, onDone }: { expense?: ExpenseView; onDone: () =>
   const method = expense?.paymentMethod ?? "";
   const methods =
     method && !PAYMENT_METHODS.includes(method as never) ? [method, ...PAYMENT_METHODS] : [...PAYMENT_METHODS];
+  const [inInstallments, setInInstallments] = useState(false);
+  const [count, setCount] = useState(6);
+  const [amountText, setAmountText] = useState(centsToInput(expense?.amount));
 
   return (
     <form action={action} className="grid gap-4">
@@ -97,12 +109,29 @@ function ExpenseForm({ expense, onDone }: { expense?: ExpenseView; onDone: () =>
         </div>
       </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Fecha" htmlFor={`${id}-date`}>
+        <Field label={inInstallments ? "Fecha de compra" : expense?.installmentCount ? "Fecha de la cuota" : "Fecha"} htmlFor={`${id}-date`}>
           <Input id={`${id}-date`} name="date" type="date" required defaultValue={expense?.date || todayInput()} />
         </Field>
-        <Field label="Monto" htmlFor={`${id}-amount`}>
-          <MoneyInput id={`${id}-amount`} name="amount" required defaultValue={centsToInput(expense?.amount)} />
+        <Field label={inInstallments || expense?.installmentCount ? "Valor de cada cuota" : "Monto"} htmlFor={`${id}-amount`}>
+          <MoneyInput
+            id={`${id}-amount`}
+            name="amount"
+            required
+            value={amountText}
+            onChange={(e) => setAmountText(e.target.value)}
+          />
         </Field>
+        {!expense && (
+          <div className="sm:col-span-2">
+            <InstallmentFields
+              enabled={inInstallments}
+              onEnabledChange={setInInstallments}
+              count={count}
+              onCountChange={setCount}
+              perInstallment={parseMoney(amountText)}
+            />
+          </div>
+        )}
         <Field label="Medio de pago" htmlFor={`${id}-method`} hint="Opcional.">
           <NativeSelect id={`${id}-method`} name="paymentMethod" defaultValue={method}>
             <option value="">Sin especificar</option>

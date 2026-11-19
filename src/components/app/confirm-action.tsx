@@ -24,6 +24,8 @@ export function ConfirmAction({
   variant = "destructive",
   action,
   redirectTo,
+  altAction,
+  altLabel,
 }: {
   trigger: React.ReactNode;
   title: string;
@@ -32,6 +34,9 @@ export function ConfirmAction({
   variant?: "destructive" | "default";
   action: () => Promise<ActionResult>;
   redirectTo?: string;
+  /** Segunda acción opcional (ej. "Todas las cuotas"). */
+  altAction?: () => Promise<ActionResult>;
+  altLabel?: string;
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -45,6 +50,20 @@ export function ConfirmAction({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          {altAction && (
+            <AlertDialogAction
+              variant={variant}
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  const res = await runAction(altAction());
+                  if (res.ok && redirectTo) router.push(redirectTo);
+                })
+              }
+            >
+              {altLabel}
+            </AlertDialogAction>
+          )}
           <AlertDialogAction
             variant={variant}
             disabled={pending}

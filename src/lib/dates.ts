@@ -116,3 +116,14 @@ export function yearRange(year: number) {
     end: new Date(`${year + 1}-01-01T00:00:00${OFFSET}`),
   };
 }
+
+/** Fechas de `count` cuotas mensuales desde `firstPeriod` ("YYYY-MM"), el mismo día (recortado a fin de mes). */
+export function installmentDates(firstPeriod: string, day: number, count: number) {
+  const out: Date[] = [];
+  let p = firstPeriod;
+  for (let i = 0; i < count; i++, p = nextPeriod(p)) {
+    const { year, month } = parsePeriod(p);
+    out.push(localDate(year, month, day));
+  }
+  return out;
+}

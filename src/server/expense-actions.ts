@@ -1,11 +1,13 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { db } from "@/lib/db";
-import { parseDateInput } from "@/lib/dates";
+import { installmentDates, localParts, parseDateInput } from "@/lib/dates";
 import { parseMoney } from "@/lib/money";
 import { type ActionResult, fail, ok, optInt, str } from "./action-result";
+import { readInstallments } from "./installments";
 import { requireAuth } from "./session";
 
 function done(message: string) {
@@ -41,15 +43,41 @@ export async function saveExpense(_prev: ActionResult | null, fd: FormData): Pro
   if ("error" in parsed) return fail(parsed.error!);
   const id = optInt(fd, "expenseId");
   if (id) {
+    // Editar una cuota cambia solo esa cuota.
     await db.expense.update({ where: { id }, data: parsed.data });
     return done("Gasto actualizado");
   }
-  await db.expense.create({ data: parsed.data });
-  return done("Gasto registrado");
+
+  const plan = readInstallments(fd);
+  if (plan && "error" in plan) return fail(plan.error);
+  if (!plan) {
+    await db.expense.create({ data: parsed.data });
+    return done("Gasto registrado");
+  }
+
+  // En cuotas: `amount` es el valor de cada cuota; una fila por mes.
+  const group = randomUUID();
+  const dates = installmentDates(plan.firstPeriod, localParts(parsed.data.date).day, plan.count);
+  await db.expense.createMany({
+    data: dates.map((date, i) => ({
+      ...parsed.data,
+      date,
+      installmentGroup: group,
+      installmentNumber: i + 1,
+      installmentCount: plan.count,
+    })),
+  });
+  return done(`${plan.count} cuotas registradas`);
 }
 
-export async function deleteExpense(id: number): Promise<ActionResult> {
+export async function deleteExpense(id: number, allInstallments = false): Promise<ActionResult> {
   await requireAuth();
+  const expense = await db.expense.findUnique({ where: { id }, select: { installmentGroup: true } });
+  if (!expense) return fail("El gasto ya no existe");
+  if (allInstallments && expense.installmentGroup) {
+    const { count } = await db.expense.deleteMany({ where: { installmentGroup: expense.installmentGroup } });
+    return done(`${count} cuotas eliminadas`);
+  }
   await db.expense.delete({ where: { id } });
-  return done("Gasto eliminado");
+  return done(expense.installmentGroup ? "Cuota eliminada" : "Gasto eliminado");
 }

@@ -8,7 +8,7 @@ import { UrlFilters } from "@/components/app/url-filters";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { db } from "@/lib/db";
-import { formatDate, localParts, toDateInput, yearRange } from "@/lib/dates";
+import { formatDate, localParts, periodLabel, periodOf, toDateInput, yearRange } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { deleteRepair } from "@/server/repair-actions";
 import { RepairDialog, type RepairView } from "./repair-dialog";
@@ -29,6 +29,7 @@ export default async function ReparacionesPage({ searchParams }: PageProps<"/rep
         ...(range ? { date: { gte: range.start, lt: range.end } } : {}),
       },
       orderBy: [{ status: "asc" }, { date: "desc" }, { createdAt: "desc" }],
+      include: { installments: { orderBy: { number: "asc" } } },
     }),
     db.repair.findMany({ select: { date: true } }),
   ]);
@@ -46,6 +47,9 @@ export default async function ReparacionesPage({ searchParams }: PageProps<"/rep
     date: r.date ? toDateInput(r.date) : "",
     cost: r.cost,
     estimatedCost: r.estimatedCost,
+    installmentCount: r.installments.length || null,
+    installmentAmount: r.installments[0]?.amount ?? null,
+    firstInstallment: r.installments[0] ? periodOf(r.installments[0].date) : "",
   });
 
   return (
@@ -110,6 +114,9 @@ export default async function ReparacionesPage({ searchParams }: PageProps<"/rep
                   {r.description && <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">{r.description}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {r.status === "DONE" ? `Hecha el ${formatDate(r.date)}` : r.date ? `Prevista para ${formatDate(r.date)}` : "Sin fecha"}
+                    {r.status === "DONE" &&
+                      r.installments.length > 0 &&
+                      ` · ${r.installments.length} cuotas de ${formatMoney(r.installments[0].amount)} desde ${periodLabel(periodOf(r.installments[0].date))}`}
                   </p>
                 </div>
                 <div className="text-right">

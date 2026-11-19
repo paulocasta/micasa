@@ -119,16 +119,31 @@ enum RepairStatus {
 }
 
 model Repair {
-  id            Int          @id @default(autoincrement())
+  id            Int                 @id @default(autoincrement())
   title         String
   description   String?
-  status        RepairStatus @default(PENDING)
+  status        RepairStatus        @default(PENDING)
   date          DateTime?
   estimatedCost Int?
+  // total; si hay cuotas, cuota × cantidad
   cost          Int?
-  createdAt     DateTime     @default(now())
+  installments  RepairInstallment[]
+  createdAt     DateTime            @default(now())
 
   @@index([date])
+}
+
+// Cuotas de una reparación pagada en cuotas: suman al gasto en su propio mes.
+model RepairInstallment {
+  id       Int      @id @default(autoincrement())
+  repairId Int
+  repair   Repair   @relation(fields: [repairId], references: [id], onDelete: Cascade)
+  number   Int
+  date     DateTime
+  amount   Int
+
+  @@index([date])
+  @@index([repairId])
 }
 
 model ShoppingItem {
@@ -140,16 +155,21 @@ model ShoppingItem {
 
 // Gastos sueltos: farmacia, artículos de limpieza, ferretería, etc.
 model Expense {
-  id            Int      @id @default(autoincrement())
-  description   String
+  id                Int      @id @default(autoincrement())
+  description       String
   // valor de EXPENSE_CATEGORIES
-  category      String
-  date          DateTime
-  amount        Int
-  paymentMethod String?
-  store         String?
-  notes         String?
-  createdAt     DateTime @default(now())
+  category          String
+  date              DateTime
+  amount            Int
+  paymentMethod     String?
+  store             String?
+  notes             String?
+  // compras en cuotas: una fila por cuota, unidas por installmentGroup
+  installmentGroup  String?
+  installmentNumber Int?
+  installmentCount  Int?
+  createdAt         DateTime @default(now())
 
   @@index([date])
+  @@index([installmentGroup])
 }

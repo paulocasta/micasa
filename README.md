@@ -13,10 +13,11 @@ Stack: Next.js 16 (App Router, Server Actions) · Prisma 7 + SQLite · Tailwind 
   - *Pago manual* (ej. Luz EPE): genera las entradas pendientes hasta diciembre; el 1° de enero genera el año nuevo.
   - *Débito automático* (ej. Internet): cada mes se crea la entrada como pagada con el monto configurado.
   - Un job diario (00:05, hora Argentina) y el arranque del servidor generan lo que falte. Si borrás una entrada generada, no se vuelve a crear.
-- **Reparaciones**: por hacer (costo estimado) o hechas (fecha y costo real). Solo las hechas suman al gasto.
+- **Reparaciones**: por hacer (costo estimado) o hechas (fecha y costo real). Solo las hechas suman al gasto. Una reparación hecha puede pagarse **en cuotas** (ver abajo): el costo total queda en la reparación y cada cuota suma al gasto de su mes.
 - **Gastos varios**: compras y pagos sueltos que no son stock de despensa — remedios, baldes, escobas, el jardinero. Cada gasto lleva categoría (Farmacia, Limpieza, Ferretería, Hogar, Super, Mercado Libre, Servicios, Otros), fecha y monto; medio de pago, comercio y notas son opcionales. Filtro por categoría y año. Las categorías se editan en `EXPENSE_CATEGORIES` (`src/lib/constants.ts`).
+  - **En cuotas** (ej. TV en 6 cuotas): al cargar un gasto nuevo, marcar "Pagado en cuotas" e ingresar el valor de cada cuota, la cantidad y el mes de la primera cuota (según el cierre de la tarjeta). Se crea una entrada por mes, el mismo día que la compra (o el último día si el mes es más corto), marcada "Cuota 2/6". Editar cambia solo esa cuota; al borrar se elige entre esa cuota o todas.
 
-Reglas de gasto: Despensa = compras con costo por fecha de compra; Impuestos = pagados por fecha de pago; Reparaciones = hechas por fecha; Gastos varios = todos, por fecha.
+Reglas de gasto: Despensa = compras con costo por fecha de compra; Impuestos = pagados por fecha de pago; Reparaciones = hechas por fecha (o cada cuota en su mes); Gastos varios = todos, por fecha (cada cuota en su mes).
 
 ## Desarrollo
 

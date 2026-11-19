@@ -9,6 +9,8 @@ const { createRecurring } = await import("@/server/tax-actions");
 const { ensureRecurringEntries } = await import("@/server/recurring");
 const { getExpenses } = await import("@/server/dashboard");
 const { saveShoppingItem, completeShoppingItem } = await import("@/server/shopping-actions");
+const { saveExpense, deleteExpense } = await import("@/server/expense-actions");
+const { saveRepair } = await import("@/server/repair-actions");
 const { localDate, monthRange } = await import("@/lib/dates");
 
 function form(data: Record<string, string>) {
@@ -24,6 +26,8 @@ beforeEach(async () => {
   await db.recurringTax.deleteMany();
   await db.category.deleteMany();
   await db.shoppingItem.deleteMany();
+  await db.expense.deleteMany();
+  await db.repair.deleteMany();
 });
 
 describe("despensa", () => {
@@ -87,5 +91,74 @@ describe("compras", () => {
 
     expect(await completeShoppingItem(item.id)).toMatchObject({ ok: true, message: "Comprado: Olla Essen" });
     expect(await db.shoppingItem.count()).toBe(0);
+  });
+});
+
+describe("cuotas", () => {
+  it("gasto en 6 cuotas crea una fila por mes y se puede borrar entero", async () => {
+    const res = await saveExpense(
+      null,
+      form({
+        description: "TV 50",
+        category: "Hogar",
+        date: "2027-01-20",
+        amount: "50.000",
+        installments: "on",
+        installmentCount: "6",
+        firstInstallment: "2027-02",
+      }),
+    );
+    expect(res).toMatchObject({ ok: true, message: "6 cuotas registradas" });
+    const rows = await db.expense.findMany({ orderBy: { date: "asc" } });
+    expect(rows).toHaveLength(6);
+    expect(rows.every((r) => r.amount === 5000000 && r.installmentCount === 6)).toBe(true);
+    expect(rows.map((r) => r.installmentNumber)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(new Set(rows.map((r) => r.installmentGroup)).size).toBe(1);
+
+    const feb = monthRange(2027, 2);
+    const janExpenses = await getExpenses(monthRange(2027, 1).start, monthRange(2027, 1).end);
+    expect(janExpenses.filter((e) => e.section === "varios")).toHaveLength(0);
+    expect(await getExpenses(feb.start, feb.end)).toMatchObject([{ section: "varios", amount: 5000000 }]);
+
+    expect(await deleteExpense(rows[1].id)).toMatchObject({ ok: true, message: "Cuota eliminada" });
+    expect(await db.expense.count()).toBe(5);
+    expect(await deleteExpense(rows[0].id, true)).toMatchObject({ ok: true, message: "5 cuotas eliminadas" });
+    expect(await db.expense.count()).toBe(0);
+  });
+
+  it("valida cantidad de cuotas", async () => {
+    const res = await saveExpense(
+      null,
+      form({ description: "TV", date: "2027-01-20", amount: "1000", installments: "on", installmentCount: "1", firstInstallment: "2027-02" }),
+    );
+    expect(res).toMatchObject({ ok: false });
+    expect(await db.expense.count()).toBe(0);
+  });
+
+  it("reparación en cuotas suma cada cuota en su mes", async () => {
+    const base = {
+      title: "Termotanque",
+      status: "DONE",
+      date: "2027-03-15",
+      cost: "100000",
+      installments: "on",
+      installmentCount: "3",
+      firstInstallment: "2027-04",
+    };
+    expect(await saveRepair(null, form(base))).toMatchObject({ ok: true });
+    const repair = await db.repair.findFirstOrThrow({ include: { installments: true } });
+    expect(repair.cost).toBe(30000000);
+    expect(repair.installments).toHaveLength(3);
+
+    const mar = monthRange(2027, 3);
+    const may = monthRange(2027, 5);
+    expect(await getExpenses(mar.start, mar.end)).toHaveLength(0);
+    expect(await getExpenses(may.start, may.end)).toMatchObject([{ section: "reparaciones", amount: 10000000 }]);
+
+    // sin cuotas vuelve a contar el total en la fecha del arreglo
+    const single = { ...base, installments: "", repairId: String(repair.id) };
+    expect(await saveRepair(null, form(single))).toMatchObject({ ok: true });
+    expect(await db.repairInstallment.count()).toBe(0);
+    expect(await getExpenses(mar.start, mar.end)).toMatchObject([{ section: "reparaciones", amount: 10000000 }]);
   });
 });

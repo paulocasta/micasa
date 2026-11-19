@@ -2,6 +2,7 @@
 
 import { CheckCircle2Icon, PencilIcon, PlusIcon } from "lucide-react";
 import { useActionState, useId, useState } from "react";
+import { InstallmentFields } from "@/components/app/installment-fields";
 import { Field, FormError, MoneyInput, SubmitButton, useActionFeedback } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { todayInput } from "@/lib/dates";
-import { centsToInput } from "@/lib/money";
+import { centsToInput, parseMoney } from "@/lib/money";
 import { saveRepair } from "@/server/repair-actions";
 
 export type RepairView = {
@@ -27,6 +28,10 @@ export type RepairView = {
   date: string;
   cost: number | null;
   estimatedCost: number | null;
+  /** Si se pagó en cuotas: cantidad, valor de cada una y primer mes ("YYYY-MM"). */
+  installmentCount: number | null;
+  installmentAmount: number | null;
+  firstInstallment: string;
 };
 
 export function RepairDialog({ repair, markDone }: { repair?: RepairView; markDone?: boolean }) {
@@ -65,6 +70,11 @@ function RepairForm({ repair, markDone, onDone }: { repair?: RepairView; markDon
   useActionFeedback(state, onDone);
   const id = useId();
   const [status, setStatus] = useState<RepairView["status"]>(markDone ? "DONE" : (repair?.status ?? "DONE"));
+  const [inInstallments, setInInstallments] = useState(!!repair?.installmentCount);
+  const [count, setCount] = useState(repair?.installmentCount ?? 6);
+  const [costText, setCostText] = useState(
+    centsToInput(repair?.installmentAmount ?? repair?.cost ?? repair?.estimatedCost),
+  );
 
   return (
     <form action={action} className="grid gap-4">
@@ -113,15 +123,26 @@ function RepairForm({ repair, markDone, onDone }: { repair?: RepairView; markDon
             <Field label="Fecha" htmlFor={`${id}-date`}>
               <Input id={`${id}-date`} name="date" type="date" required defaultValue={repair?.date || todayInput()} />
             </Field>
-            <Field label="Costo" htmlFor={`${id}-cost`}>
+            <Field label={inInstallments ? "Valor de cada cuota" : "Costo"} htmlFor={`${id}-cost`}>
               <MoneyInput
                 id={`${id}-cost`}
                 name="cost"
                 required
-                defaultValue={centsToInput(repair?.cost ?? repair?.estimatedCost)}
+                value={costText}
+                onChange={(e) => setCostText(e.target.value)}
               />
             </Field>
             <input type="hidden" name="estimatedCost" value={centsToInput(repair?.estimatedCost)} />
+            <div className="sm:col-span-2">
+              <InstallmentFields
+                enabled={inInstallments}
+                onEnabledChange={setInInstallments}
+                count={count}
+                onCountChange={setCount}
+                perInstallment={parseMoney(costText)}
+                defaultFirst={repair?.firstInstallment}
+              />
+            </div>
           </>
         ) : (
           <>

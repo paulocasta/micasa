@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { byMonth, sumTotals } from "@/lib/dashboard-calc";
-import { localDate, monthRange, periodOf, periodsBetween } from "@/lib/dates";
+import { installmentDates, localDate, monthRange, periodOf, periodsBetween, toDateInput } from "@/lib/dates";
 import { parseMoney } from "@/lib/money";
 import { planRecurring, type RecurringInput } from "@/lib/recurring-plan";
 import { itemKey, matchesQuery } from "@/lib/text";
@@ -73,6 +73,11 @@ describe("fechas y texto", () => {
     expect(start.toISOString()).toBe("2026-10-01T03:00:00.000Z");
     expect(end.toISOString()).toBe("2026-11-01T03:00:00.000Z");
     expect(periodsBetween("2026-11", "2027-02")).toEqual(["2026-11", "2026-12", "2027-01", "2027-02"]);
+  });
+
+  it("cuotas caen el mismo día de cada mes, recortado a fin de mes", () => {
+    expect(installmentDates("2027-01", 31, 3).map(toDateInput)).toEqual(["2027-01-31", "2027-02-28", "2027-03-31"]);
+    expect(installmentDates("2026-12", 10, 2).map(toDateInput)).toEqual(["2026-12-10", "2027-01-10"]);
   });
 
   it("itemKey ignora mayúsculas, acentos y espacios", () => {

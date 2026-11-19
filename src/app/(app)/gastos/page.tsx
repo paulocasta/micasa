@@ -47,6 +47,8 @@ export default async function GastosPage({ searchParams }: PageProps<"/gastos">)
     paymentMethod: e.paymentMethod ?? "",
     store: e.store ?? "",
     notes: e.notes ?? "",
+    installmentNumber: e.installmentNumber,
+    installmentCount: e.installmentCount,
   });
 
   return (
@@ -102,6 +104,11 @@ export default async function GastosPage({ searchParams }: PageProps<"/gastos">)
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="font-medium">{e.description}</h2>
                     <Badge variant="secondary">{e.category}</Badge>
+                    {e.installmentCount && (
+                      <Badge variant="outline">
+                        Cuota {e.installmentNumber}/{e.installmentCount}
+                      </Badge>
+                    )}
                   </div>
                   {e.notes && <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">{e.notes}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
@@ -111,7 +118,15 @@ export default async function GastosPage({ searchParams }: PageProps<"/gastos">)
                   <ExpenseDialog expense={toView(e)} />
                   <ConfirmAction
                     title={`¿Eliminar "${e.description}"?`}
-                    action={deleteExpense.bind(null, e.id)}
+                    {...(e.installmentGroup
+                      ? {
+                          description: `Es la cuota ${e.installmentNumber} de ${e.installmentCount}.`,
+                          confirmLabel: "Solo esta cuota",
+                          altAction: deleteExpense.bind(null, e.id, true),
+                          altLabel: "Todas las cuotas",
+                        }
+                      : {})}
+                    action={deleteExpense.bind(null, e.id, false)}
                     trigger={
                       <Button variant="ghost" size="icon" aria-label={`Eliminar ${e.description}`}>
                         <Trash2Icon aria-hidden />
